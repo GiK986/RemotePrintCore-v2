@@ -6,6 +6,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <Target Name="CopyViewsToPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <ViewFiles Include="$(MSBuildProjectDirectory)/Views/**/*.cshtml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ViewFiles)" DestinationFiles="@(ViewFiles->'$(PublishDir)Views/%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
+
   <ItemGroup>
     <PackageReference Include="MailKit" Version="4.15.1" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.5" />

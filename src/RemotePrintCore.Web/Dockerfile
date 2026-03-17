@@ -7,7 +7,7 @@ RUN dotnet restore src/RemotePrintCore.Web/RemotePrintCore.Web.csproj
 
 COPY . .
 RUN dotnet publish src/RemotePrintCore.Web/RemotePrintCore.Web.csproj \
-    -c Release -o /app/publish --no-restore
+    -c Release -o /app/publish
 
 # Install Playwright CLI and download Chromium into /ms-playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
