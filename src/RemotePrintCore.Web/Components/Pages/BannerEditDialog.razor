@@ -11,10 +11,10 @@
         <MudTextField @bind-Value="FormModel.Name" Label="Name" Required="true" Class="mb-3" />
         <MudGrid Spacing="2">
             <MudItem xs="12" md="6">
-                <MudDatePicker @bind-Date="FormModel.FromDate" Label="From Date" Required="true" />
+                <MudDatePicker @bind-Date="FormModel.FromDate" Label="From Date" Required="true" DateFormat="dd.MM.yyyy" />
             </MudItem>
             <MudItem xs="12" md="6">
-                <MudDatePicker @bind-Date="FormModel.ToDate" Label="To Date" Required="true" />
+                <MudDatePicker @bind-Date="FormModel.ToDate" Label="To Date" Required="true" DateFormat="dd.MM.yyyy" />
             </MudItem>
         </MudGrid>
     </DialogContent>
