@@ -1,9 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: src/RemotePrintCore.Web/Dockerfile
-    image: remoteprintcore-v2:latest
+    image: gik986/remoteprintcore-v2:latest
     restart: unless-stopped
     env_file: .env
     environment:
@@ -14,7 +11,7 @@ services:
       - logs:/app/logs
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.remoteprintcore.rule=Host(`rrp.autoplus.bg`)"
+      - "traefik.http.routers.remoteprintcore.rule=Host(`domainname`)"
       - "traefik.http.routers.remoteprintcore.entrypoints=websecure"
       - "traefik.http.routers.remoteprintcore.tls.certresolver=letsencrypt"
       - "traefik.http.services.remoteprintcore.loadbalancer.server.port=8080"
