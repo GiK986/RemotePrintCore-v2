@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
+
+RUN ls wwwroot/ && echo "---" && ls wwwroot/_framework/ 2>/dev/null || echo "_framework dir MISSING"
+
 COPY --from=build /ms-playwright /ms-playwright
 
 RUN mkdir -p /app/data /app/wwwroot/uploads /app/logs
