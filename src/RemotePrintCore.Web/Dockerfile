@@ -9,11 +9,6 @@ COPY . .
 RUN dotnet publish src/RemotePrintCore.Web/RemotePrintCore.Web.csproj \
     -c Release -o /app/publish --no-restore
 
-RUN echo "=== manifest routes for blazor.web ===" && \
-    python3 -c "import json; d=json.load(open('/app/publish/RemotePrintCore.Web.staticwebassets.endpoints.json')); [print(e['Route']) for e in d.get('Endpoints',[]) if 'blazor.web' in e.get('Route','')]" && \
-    echo "=== blazor.web.js in nuget ===" && \
-    find /root/.nuget/packages -name "blazor.web.js" 2>/dev/null | head -3
-
 # Install Playwright CLI and download Chromium into /ms-playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN dotnet tool install --global Microsoft.Playwright.CLI \
@@ -34,9 +29,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/publish .
-
-RUN ls wwwroot/ && echo "---" && ls wwwroot/_framework/ 2>/dev/null || echo "_framework dir MISSING"
-
 COPY --from=build /ms-playwright /ms-playwright
 
 RUN mkdir -p /app/data /app/wwwroot/uploads /app/logs
