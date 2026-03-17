@@ -9,11 +9,10 @@ COPY . .
 RUN dotnet publish src/RemotePrintCore.Web/RemotePrintCore.Web.csproj \
     -c Release -o /app/publish --no-restore
 
-RUN dotnet --version && \
-    echo "=== publish/wwwroot ===" && ls /app/publish/wwwroot/ && \
-    echo "=== _framework ===" && ls /app/publish/wwwroot/_framework/ 2>/dev/null || echo "_framework MISSING" && \
-    echo "=== staticwebassets manifest ===" && find /app/publish -name "*.staticwebassets*" && \
-    echo "=== blazor.web.js anywhere ===" && find /app/publish -name "blazor.web.js" 2>/dev/null || echo "NOT FOUND"
+RUN echo "=== manifest routes for blazor.web ===" && \
+    python3 -c "import json; d=json.load(open('/app/publish/RemotePrintCore.Web.staticwebassets.endpoints.json')); [print(e['Route']) for e in d.get('Endpoints',[]) if 'blazor.web' in e.get('Route','')]" && \
+    echo "=== blazor.web.js in nuget ===" && \
+    find /root/.nuget/packages -name "blazor.web.js" 2>/dev/null | head -3
 
 # Install Playwright CLI and download Chromium into /ms-playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
