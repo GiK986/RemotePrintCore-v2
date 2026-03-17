@@ -12,6 +12,7 @@ RUN dotnet publish src/RemotePrintCore.Web/RemotePrintCore.Web.csproj \
 # Install Playwright CLI and download Chromium into /ms-playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN dotnet tool install --global Microsoft.Playwright.CLI \
+    && cd src/RemotePrintCore.Web \
     && /root/.dotnet/tools/playwright install --with-deps chromium
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
