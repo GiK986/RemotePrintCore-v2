@@ -87,7 +87,6 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
 }
 
-app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -120,6 +119,7 @@ app.MapPost("/api/banner-upload", async (IFormFile file, IWebHostEnvironment env
 }).DisableAntiforgery();
 
 // Blazor
+app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
