@@ -487,3 +487,10 @@ appsettings.Development.json
 *.db
 *.db-shm
 *.db-wal
+
+# Runtime uploads
+src/RemotePrintCore.Web/wwwroot/uploads/*.png
+src/RemotePrintCore.Web/wwwroot/uploads/*.jpg
+src/RemotePrintCore.Web/wwwroot/uploads/*.jpeg
+src/RemotePrintCore.Web/wwwroot/uploads/*.gif
+src/RemotePrintCore.Web/wwwroot/uploads/*.webp
