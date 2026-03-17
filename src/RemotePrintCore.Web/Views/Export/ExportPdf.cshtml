@@ -1,0 +1,139 @@
+@using RemotePrintCore.Web.Models.ViewModels;
+@model DocumentInfoViewModel;
+
+@{
+    ViewData["Title"] = "ExportPdf";
+    Layout = "~/Views/Shared/_ExportLayout.cshtml";
+}
+
+<div id="container">
+    <div id="header">
+        <div id="logo">
+            <img src="/image/image000.jpg" alt="">
+        </div>
+        <div id="reference">
+            <h3><strong>СКЛАДОВА РАЗПИСКА</strong></h3>
+            <h4>Номер: @Model.DocumentHeader.DocumentNumber</h4>
+            <p>Дата: @Model.DocumentHeader.DocumentData</p>
+            <p>Срок на плащане : @Model.DocumentHeader.DocumentDueData</p>
+            <br />
+            <h4>Задължение на клиента : 1234.99 лв.</h4>
+        </div>
+    </div>
+
+    <div id="fromto">
+        <div id="from">
+            <h3>ИЗДАТЕЛ</h3>
+            <p>
+                <strong>@Model.DocumentHeader.SenderInformation.FullName</strong><br>
+                Обект : @Model.DocumentHeader.WarehouseName <br />
+                Адрес : @Model.DocumentHeader.SenderInformation.Adrress <br />
+            </p>
+        </div>
+        <div id="to">
+            <h3>ПОЛУЧАТЕЛ</h3>
+            <p>
+                <strong>@Model.DocumentHeader.RecipientInformation.FullName</strong><br />
+                Адрес : @Model.DocumentHeader.RecipientInformation.Adrress <br />
+            </p>
+        </div>
+    </div>
+
+    <div id="items">
+        <p>Цените са в лева с ДДС</p>
+        <table>
+            <tr>
+                <th>№</th>
+                <th>Код</th>
+                <th>Наименование</th>
+                <th>К-во</th>
+                <th>Мярка</th>
+                <th>Кр. цена</th>
+                <th>Стойност</th>
+            </tr>
+            @{ int i = 0; }
+            @foreach (var item in Model.DocumentItems)
+            {
+                i++;
+                <tr>
+                    <td>@i</td>
+                    <td>@item.CodeNumber</td>
+                    <td>@item.Description</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitDemension</td>
+                    <td>@item.SalesPrice.ToString("F2")</td>
+                    <td>@item.TotalSalesPrice.ToString("F2")</td>
+                </tr>
+            }
+
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+    </div>
+
+    <div id="summary">
+        <div id="note">
+            <h4>Note :</h4>
+            <p>@Model.DocumentHeader.Comment</p>
+        </div>
+        <div id="total">
+            <table border="1">
+                <tr>
+                    <td>Сума за плащане</td>
+                    <td>@Model.DocumentFooter.TotalSalesPrice.ToString("F2")</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div id="singnaturs">
+        <div id="recipient">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Предал:</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">@Model.DocumentFooter.AuthorName</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div id="sender">
+            <table>
+                <tbody>
+                    <tr>
+                        <td>Приел:</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="footer">
+        <p>
+            Получателят /Купувачът/ декларира, че е получил от Издателя /Продавача/ описаните в складова разписка резервни части в изправно техническо състояние и в пълна комплектност.
+        </p>
+    </div>
+</div>

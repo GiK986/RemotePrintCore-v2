@@ -1,0 +1,125 @@
+@page "/banners"
+@attribute [Authorize]
+@using RemotePrintCore.Web.Models.Entities
+@using RemotePrintCore.Web.Services.Banners
+@inject IBannerService BannerService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IWebHostEnvironment Env
+
+<MudText Typo="Typo.h4" Class="mb-4">Banners</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+           OnClick="OpenUploadDialog" Class="mb-4">
+    Upload Banner
+</MudButton>
+
+@if (_banners.Count == 0)
+{
+    <MudText Color="Color.Secondary">No banners yet</MudText>
+}
+else
+{
+    <MudTable Items="_banners" Dense="true" Hover="true">
+        <HeaderContent>
+            <MudTh Style="width:320px">Preview</MudTh>
+            <MudTh>Name</MudTh>
+            <MudTh>From</MudTh>
+            <MudTh>To</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd>
+                <MudImage Src="@($"/uploads/{context.FileName}")" Width="300" Height="66"
+                          ObjectFit="ObjectFit.Cover" Class="rounded" />
+            </MudTd>
+            <MudTd>@context.Name</MudTd>
+            <MudTd>@context.FromDate.ToLocalTime().ToString("dd.MM.yyyy")</MudTd>
+            <MudTd>@context.ToDate.ToLocalTime().ToString("dd.MM.yyyy")</MudTd>
+            <MudTd>
+                @{
+                    var now = DateTime.UtcNow;
+                    var active = context.FromDate <= now && context.ToDate >= now;
+                }
+                <MudChip T="string" Color="@(active ? Color.Success : Color.Default)" Size="Size.Small">
+                    @(active ? "Active" : "Inactive")
+                </MudChip>
+            </MudTd>
+            <MudTd>
+                <MudTooltip Text="Edit">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                   Color="Color.Primary"
+                                   OnClick="() => OpenEditDialog(context)" />
+                </MudTooltip>
+                <MudTooltip Text="Delete">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="() => DeleteBanner(context)" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    private List<Banner> _banners = [];
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    protected override async Task OnInitializedAsync() => await LoadBanners();
+
+    private async Task LoadBanners() => _banners = await BannerService.GetAllAsync();
+
+    private async Task OpenUploadDialog()
+    {
+        var dialog = await DialogService.ShowAsync<BannerUploadDialog>("Upload New Banner", _dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            var data = (BannerUploadDialog.BannerUploadResult)result.Data!;
+            await BannerService.CreateAsync(data.Name, data.FromDate, data.ToDate, data.FileName);
+            await LoadBanners();
+            Snackbar.Add("Banner uploaded.", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditDialog(Banner banner)
+    {
+        var parameters = new DialogParameters<BannerEditDialog>
+        {
+            {
+                x => x.FormModel, new BannerEditDialog.BannerEditModel
+                {
+                    Name = banner.Name,
+                    FromDate = banner.FromDate.ToLocalTime(),
+                    ToDate = banner.ToDate.ToLocalTime(),
+                    FileName = banner.FileName,
+                }
+            },
+        };
+        var dialog = await DialogService.ShowAsync<BannerEditDialog>("Edit Banner", parameters, _dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            var model = (BannerEditDialog.BannerEditModel)result.Data!;
+            await BannerService.UpdateAsync(banner.Id, model.Name,
+                model.FromDate!.Value.ToUniversalTime(), model.ToDate!.Value.ToUniversalTime());
+            await LoadBanners();
+            Snackbar.Add("Banner updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeleteBanner(Banner banner)
+    {
+        await BannerService.DeleteAsync(banner.Id);
+
+        var filePath = Path.Combine(Env.WebRootPath, "uploads", banner.FileName);
+        if (File.Exists(filePath))
+            File.Delete(filePath);
+
+        await LoadBanners();
+        Snackbar.Add("Banner deleted.", Severity.Info);
+    }
+}

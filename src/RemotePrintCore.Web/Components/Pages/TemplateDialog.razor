@@ -1,0 +1,66 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@MudDialog.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValid">
+            <MudTextField @bind-Value="FormModel.Name" Label="Name" Required="true"
+                          RequiredError="Name is required" Class="mb-3"
+                          HelperText="Short identifier (e.g. Standard)" />
+            <MudSelect T="string" Label="Template Views" MultiSelection="true"
+                       SelectedValues="_selectedViews"
+                       SelectedValuesChanged="v => _selectedViews = [..v]"
+                       Required="true" RequiredError="At least one template view is required"
+                       HelperText="Select one or more template views">
+                @foreach (var view in AvailableViews)
+                {
+                    <MudSelectItem Value="@view">@view</MudSelectItem>
+                }
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="Submit" Disabled="!_formValid">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public TemplateFormModel FormModel { get; set; } = new();
+
+    [Parameter]
+    public IEnumerable<string> AvailableViews { get; set; } = [];
+
+    private MudForm _form = default!;
+    private bool _formValid;
+    private HashSet<string> _selectedViews = [];
+
+    protected override void OnParametersSet()
+    {
+        _selectedViews = [.. FormModel.Values
+            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(v => v.Trim())
+            .Where(v => !string.IsNullOrEmpty(v))];
+    }
+
+    private async Task Submit()
+    {
+        FormModel.Values = string.Join(",", _selectedViews);
+        await _form.ValidateAsync();
+        if (_formValid)
+            MudDialog.Close(DialogResult.Ok(FormModel));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public class TemplateFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Values { get; set; } = string.Empty;
+    }
+}

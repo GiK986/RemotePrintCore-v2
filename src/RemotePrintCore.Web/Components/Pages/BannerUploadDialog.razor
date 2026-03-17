@@ -1,0 +1,190 @@
+@inject IJSRuntime JS
+@inject IWebHostEnvironment Env
+@implements IAsyncDisposable
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@MudDialog.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTextField @bind-Value="_name" Label="Name" Required="true" Class="mb-3" />
+        <MudGrid Spacing="2" Class="mb-1">
+            <MudItem xs="12" md="6">
+                <MudDatePicker @bind-Date="_fromDate" Label="From Date" Required="true" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudDatePicker @bind-Date="_toDate" Label="To Date" Required="true" />
+            </MudItem>
+        </MudGrid>
+
+        <MudFileUpload @ref="_fileUpload" T="IBrowserFile" FilesChanged="OnFileSelected"
+                       Accept="image/*" Class="mb-1">
+            <SelectedTemplate Context="file">
+                @* suppress MudBlazor's default chip *@
+            </SelectedTemplate>
+            <CustomContent Context="upload">
+                <MudPaper id="banner-upload-drop-zone" Outlined="true"
+                          Class="pa-4 d-flex flex-column align-center justify-center rounded cursor-pointer"
+                          Style="border-style: dashed; min-height: 100px;"
+                          @onclick="upload.OpenFilePickerAsync">
+                    <MudIcon Icon="@(_previewUrl != null ? Icons.Material.Filled.Image : Icons.Material.Filled.CloudUpload)"
+                             Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        @(_droppedFileName ?? _selectedFile?.Name ?? "Drag & drop or click to select image")
+                    </MudText>
+                    @if (_previewUrl != null)
+                    {
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Click or drop to replace</MudText>
+                    }
+                </MudPaper>
+            </CustomContent>
+        </MudFileUpload>
+
+        @if (_previewUrl != null)
+        {
+            <div class="d-flex justify-end mb-1">
+                <MudButton Variant="Variant.Text" Color="Color.Error" Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearFile">
+                    Clear
+                </MudButton>
+            </div>
+            <div class="mb-2">
+                <MudImage Src="@_previewUrl" Alt="Preview" Style="width:100%" ObjectFit="ObjectFit.Cover"
+                          Class="rounded" />
+            </div>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="Submit" Disabled="_uploading"
+                   StartIcon="@Icons.Material.Filled.Save">
+            @(_uploading ? "Uploading..." : "Save Banner")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private MudFileUpload<IBrowserFile>? _fileUpload;
+    private string _name = string.Empty;
+    private DateTime? _fromDate = DateTime.Today;
+    private DateTime? _toDate = DateTime.Today.AddMonths(1);
+    private IBrowserFile? _selectedFile;
+    private string? _droppedTempFileName;
+    private string? _droppedFileName;
+    private string? _previewUrl;
+    private bool _uploading;
+    private DotNetObjectReference<BannerUploadDialog>? _dotnetRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            _dotnetRef = DotNetObjectReference.Create(this);
+
+        await JS.InvokeVoidAsync("bannerDropZone.init", "banner-upload-drop-zone", _dotnetRef);
+    }
+
+    [JSInvokable]
+    public Task OnFileDrop(string fileName, string tempFileName, string previewUrl)
+    {
+        _droppedFileName = fileName;
+        _droppedTempFileName = tempFileName;
+        _selectedFile = null;
+        _previewUrl = previewUrl;
+        _name = Path.GetFileNameWithoutExtension(fileName)
+                    .Replace('_', ' ').Replace('-', ' ').Trim();
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task OnFileSelected(IBrowserFile? file)
+    {
+        _selectedFile = file;
+        _droppedTempFileName = null;
+        _droppedFileName = null;
+        if (file == null) { _previewUrl = null; return; }
+
+        _name = Path.GetFileNameWithoutExtension(file.Name)
+                    .Replace('_', ' ').Replace('-', ' ').Trim();
+
+        using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        var base64 = Convert.ToBase64String(ms.ToArray());
+        _previewUrl = $"data:{file.ContentType};base64,{base64}";
+    }
+
+    private async Task ClearFile()
+    {
+        if (_fileUpload != null) await _fileUpload.ClearAsync();
+        DeleteTempFile();
+        _selectedFile = null;
+        _droppedTempFileName = null;
+        _droppedFileName = null;
+        _previewUrl = null;
+        _name = string.Empty;
+    }
+
+    private void DeleteTempFile()
+    {
+        if (_droppedTempFileName is null) return;
+        var path = Path.Combine(Env.WebRootPath, "uploads", _droppedTempFileName);
+        if (File.Exists(path)) File.Delete(path);
+    }
+
+    private async Task Submit()
+    {
+        var hasFile = _selectedFile != null || _droppedTempFileName != null;
+        if (string.IsNullOrWhiteSpace(_name) || !hasFile || _fromDate == null || _toDate == null)
+            return;
+
+        _uploading = true;
+        try
+        {
+            string fileName;
+            var uploadsPath = Path.Combine(Env.WebRootPath, "uploads");
+            Directory.CreateDirectory(uploadsPath);
+
+            if (_droppedTempFileName != null)
+            {
+                var ext = Path.GetExtension(_droppedTempFileName);
+                fileName = $"{Guid.NewGuid()}{ext}";
+                File.Move(Path.Combine(uploadsPath, _droppedTempFileName),
+                          Path.Combine(uploadsPath, fileName));
+                _droppedTempFileName = null; // prevent deletion in DisposeAsync
+            }
+            else
+            {
+                var ext = Path.GetExtension(_selectedFile!.Name);
+                fileName = $"{Guid.NewGuid()}{ext}";
+                using var fs = new FileStream(Path.Combine(uploadsPath, fileName), FileMode.Create);
+                using var uploadStream = _selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+                await uploadStream.CopyToAsync(fs);
+            }
+
+            MudDialog.Close(DialogResult.Ok(new BannerUploadResult(
+                _name, _fromDate.Value.ToUniversalTime(), _toDate.Value.ToUniversalTime(), fileName)));
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        DeleteTempFile();
+        MudDialog.Cancel();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        DeleteTempFile();
+        _dotnetRef?.Dispose();
+    }
+
+    public record BannerUploadResult(string Name, DateTime FromDate, DateTime ToDate, string FileName);
+}

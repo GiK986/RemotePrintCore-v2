@@ -1,0 +1,12 @@
+<MudNavMenu>
+    <AuthorizeView Roles="Administrator">
+        <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
+    </AuthorizeView>
+    <MudNavLink Href="/banners" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Image">Banners</MudNavLink>
+    <AuthorizeView Roles="Administrator">
+        <MudNavLink Href="/printers" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Print">Printers</MudNavLink>
+        <MudNavLink Href="/templates" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Description">Templates</MudNavLink>
+        <MudNavLink Href="/printlog" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.History">Print Log</MudNavLink>
+        <MudNavLink Href="/users" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.People">Users</MudNavLink>
+    </AuthorizeView>
+</MudNavMenu>

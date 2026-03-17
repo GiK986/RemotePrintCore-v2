@@ -1,0 +1,145 @@
+@page "/printers"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.EntityFrameworkCore
+@using RemotePrintCore.Web.Data
+@using RemotePrintCore.Web.Models.Entities
+@using RemotePrintCore.Web.Services.Printing
+@inject AppDbContext Db
+@inject IPrinterService PrinterService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudText Typo="Typo.h4" Class="mb-4">Printers</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+           OnClick="OpenAddDialog" Class="mb-4">
+    Add Printer
+</MudButton>
+
+<MudTable Items="_printers" Dense="true" Hover="true" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>IP Address</MudTh>
+        <MudTh>Port</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Name</MudTd>
+        <MudTd>@context.IpAddress</MudTd>
+        <MudTd>@context.Port</MudTd>
+        <MudTd>
+            <MudChip T="string" Color="@(context.IsActive ? Color.Success : Color.Default)" Size="Size.Small">
+                @(context.IsActive ? "Active" : "Inactive")
+            </MudChip>
+        </MudTd>
+        <MudTd>
+            <MudTooltip Text="Test connection">
+                <MudIconButton Icon="@Icons.Material.Filled.NetworkCheck" Size="Size.Small"
+                               OnClick="() => TestConnection(context)" />
+            </MudTooltip>
+            <MudTooltip Text="Edit">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="() => OpenEditDialog(context)" />
+            </MudTooltip>
+            <MudTooltip Text="Delete">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               OnClick="() => DeletePrinter(context)" />
+            </MudTooltip>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Color="Color.Secondary">No printers configured yet</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<Printer> _printers = [];
+    private bool _loading = true;
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    protected override async Task OnInitializedAsync() => await LoadPrinters();
+
+    private async Task LoadPrinters()
+    {
+        _loading = true;
+        _printers = await Db.Printers.OrderBy(p => p.Name).ToListAsync();
+        _loading = false;
+    }
+
+    private async Task OpenAddDialog()
+    {
+        var parameters = new DialogParameters<PrinterDialog>
+        {
+            { x => x.FormModel, new PrinterDialog.PrinterFormModel() },
+        };
+        var dialog = await DialogService.ShowAsync<PrinterDialog>("Add Printer", parameters, _dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            var model = (PrinterDialog.PrinterFormModel)result.Data!;
+            Db.Printers.Add(new Printer
+            {
+                Name = model.Name,
+                IpAddress = model.IpAddress,
+                Port = model.Port,
+                IsActive = model.IsActive,
+            });
+            await Db.SaveChangesAsync();
+            await LoadPrinters();
+            Snackbar.Add("Printer added.", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditDialog(Printer printer)
+    {
+        var parameters = new DialogParameters<PrinterDialog>
+        {
+            {
+                x => x.FormModel, new PrinterDialog.PrinterFormModel
+                {
+                    Name = printer.Name,
+                    IpAddress = printer.IpAddress,
+                    Port = printer.Port,
+                    IsActive = printer.IsActive,
+                }
+            },
+        };
+        var dialog = await DialogService.ShowAsync<PrinterDialog>("Edit Printer", parameters, _dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            var model = (PrinterDialog.PrinterFormModel)result.Data!;
+            var entity = await Db.Printers.FindAsync(printer.Id);
+            if (entity != null)
+            {
+                entity.Name = model.Name;
+                entity.IpAddress = model.IpAddress;
+                entity.Port = model.Port;
+                entity.IsActive = model.IsActive;
+                await Db.SaveChangesAsync();
+            }
+            await LoadPrinters();
+            Snackbar.Add("Printer updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeletePrinter(Printer printer)
+    {
+        Db.Printers.Remove(printer);
+        await Db.SaveChangesAsync();
+        await LoadPrinters();
+        Snackbar.Add($"Printer '{printer.Name}' deleted.", Severity.Info);
+    }
+
+    private async Task TestConnection(Printer printer)
+    {
+        var ok = await PrinterService.TestConnectionAsync(printer.IpAddress, printer.Port);
+        if (ok)
+            Snackbar.Add($"{printer.Name}: connection OK", Severity.Success);
+        else
+            Snackbar.Add($"{printer.Name}: connection FAILED", Severity.Error);
+    }
+}

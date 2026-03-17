@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+**/logs/
+src/RemotePrintCore.Web/data/
+src/RemotePrintCore.Web/wwwroot/uploads/
+.env
+**/appsettings.Development.json
+.git/
+docs/

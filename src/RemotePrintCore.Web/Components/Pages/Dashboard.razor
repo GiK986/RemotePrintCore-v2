@@ -1,0 +1,193 @@
+@page "/"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.EntityFrameworkCore
+@using RemotePrintCore.Web.Data
+@using RemotePrintCore.Web.Models.Entities
+@using RemotePrintCore.Web.Services.Banners
+@using RemotePrintCore.Web.Services.PrintLog
+@inject AppDbContext Db
+@inject IBannerService BannerService
+@inject IPrintLogService PrintLogService
+
+<MudText Typo="Typo.h4" Class="mb-6">Dashboard</MudText>
+
+<MudGrid>
+
+    @* ── Top row: equal-height cards ── *@
+    <MudItem xs="12" md="4">
+        <MudCard Style="height:300px; display:flex; flex-direction:column;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Image" Class="mr-2" />Active Banners
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Style="flex:1; overflow-y:auto; min-height:0;">
+                @if (_activeBanners.Count == 0)
+                {
+                    <MudText Color="Color.Secondary">No active banners</MudText>
+                }
+                else
+                {
+                    foreach (var b in _activeBanners)
+                    {
+                        <div class="d-flex align-center mb-2">
+                            <MudImage Src="@($"/uploads/{b.FileName}")" Width="64" Height="40"
+                                      ObjectFit="ObjectFit.Cover" Class="rounded mr-3" Style="flex-shrink:0;" />
+                            <div>
+                                <MudText Typo="Typo.body2" Style="font-weight:500">@b.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                    @b.FromDate.ToString("dd.MM.yyyy") – @b.ToDate.ToString("dd.MM.yyyy")
+                                </MudText>
+                            </div>
+                        </div>
+                    }
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudCard Style="height:300px; display:flex; flex-direction:column;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.Print" Class="mr-2" />Printers
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Style="flex:1; overflow-y:auto; min-height:0;">
+                @if (_printers.Count == 0)
+                {
+                    <MudText Color="Color.Secondary">No printers configured</MudText>
+                }
+                else
+                {
+                    foreach (var p in _printers)
+                    {
+                        <div class="d-flex align-center justify-space-between mb-2">
+                            <div>
+                                <MudText Typo="Typo.body2" Style="font-weight:500">@p.Name</MudText>
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@p.IpAddress:@p.Port</MudText>
+                            </div>
+                            <MudChip T="string" Color="@(p.IsActive ? Color.Success : Color.Default)"
+                                     Size="Size.Small">
+                                @(p.IsActive ? "Active" : "Inactive")
+                            </MudChip>
+                        </div>
+                    }
+                }
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudCard Style="height:300px; display:flex; flex-direction:column;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <MudText Typo="Typo.h6">
+                            <MudIcon Icon="@Icons.Material.Filled.BarChart" Class="mr-2" />Today
+                        </MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">UTC @DateTime.UtcNow.ToString("dd.MM.yyyy")</MudText>
+                    </div>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+                <MudText Typo="Typo.h2" Color="Color.Primary" Align="Align.Center">@_todayTotal</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary" Align="Align.Center" Class="mb-4">prints today</MudText>
+                <MudDivider />
+                <div class="d-flex justify-space-around mt-4">
+                    <div class="d-flex flex-column align-center">
+                        <MudText Typo="Typo.h4" Color="Color.Success">@_todaySuccess</MudText>
+                        <MudText Typo="Typo.caption">Success</MudText>
+                    </div>
+                    <MudDivider Vertical="true" FlexItem="true" />
+                    <div class="d-flex flex-column align-center">
+                        <MudText Typo="Typo.h4" Color="Color.Error">@_todayErrors</MudText>
+                        <MudText Typo="Typo.caption">Errors</MudText>
+                    </div>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    @* ── Recent print jobs ── *@
+    <MudItem xs="12">
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">
+                        <MudIcon Icon="@Icons.Material.Filled.History" Class="mr-2" />Recent Print Jobs
+                    </MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="_recentLogs" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>Document</MudTh>
+                        <MudTh>Customer</MudTh>
+                        <MudTh>Printer</MudTh>
+                        <MudTh>Template</MudTh>
+                        <MudTh>Copies</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Time (UTC)</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.DocumentNumber</MudTd>
+                        <MudTd>@context.CustomerName</MudTd>
+                        <MudTd>@context.PrinterName</MudTd>
+                        <MudTd>@context.TemplateName</MudTd>
+                        <MudTd>@context.NumberOfCopies</MudTd>
+                        <MudTd>
+                            <MudChip T="string" Color="@(context.Status == PrintStatus.Success ? Color.Success : Color.Error)"
+                                     Size="Size.Small">
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                        <MudTd>@context.CreatedOn.ToString("dd.MM HH:mm")</MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Color="Color.Secondary">No print jobs yet</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+</MudGrid>
+
+@code {
+    private List<Banner> _activeBanners = [];
+    private List<Printer> _printers = [];
+    private List<Models.Entities.PrintLog> _recentLogs = [];
+    private int _todayTotal;
+    private int _todaySuccess;
+    private int _todayErrors;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var now = DateTime.UtcNow;
+        var today = DateTime.SpecifyKind(now.Date, DateTimeKind.Utc);
+
+        _activeBanners = await Db.Banners
+            .Where(b => b.FromDate <= now && b.ToDate >= now)
+            .OrderBy(b => b.Name)
+            .ToListAsync();
+
+        _printers = await Db.Printers
+            .OrderBy(p => p.Name)
+            .ToListAsync();
+
+        _recentLogs = await PrintLogService.GetRecentAsync(50);
+
+        var todayLogs = await Db.PrintLogs
+            .Where(l => l.CreatedOn >= today)
+            .ToListAsync();
+
+        _todayTotal = todayLogs.Count;
+        _todaySuccess = todayLogs.Count(l => l.Status == PrintStatus.Success);
+        _todayErrors = todayLogs.Count(l => l.Status == PrintStatus.Error);
+    }
+}

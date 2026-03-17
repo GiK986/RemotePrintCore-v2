@@ -1,0 +1,301 @@
+@using RemotePrintCore.Web.Models.ViewModels;
+@model DocumentInfoViewModel;
+
+@{
+    ViewData["Title"] = "Document Template v3";
+    ViewData["OrderNumber"] = Model.DocumentHeader.OrderNumber.Substring(2);
+    Layout = "~/Views/Shared/_DocumentTemplateLayout.cshtml";
+
+    double ExVat(double price) => Math.Round(price / 1.2, 2);
+}
+
+<section id="header">
+    <table>
+        <colgroup>
+            <col width="31">
+            <col width="27">
+            <col width="34">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="47">
+            <col width="48">
+            <col width="42">
+            <col width="26">
+            <col width="13">
+            <col width="4">
+            <col width="55">
+            <col width="30">
+            <col width="25">
+            <col width="28">
+            <col width="36">
+            <col width="49">
+            <col width="111">
+        </colgroup>
+        <tbody>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R13C1" colspan="7">
+                    <span style="white-space:nowrap">СКЛАДОВА&nbsp;РАЗПИСКА</span>
+                </td>
+                <td class="R13C8">&nbsp;</td>
+                <td class="R13C9" colspan="7">
+                    <span style="white-space:nowrap">№&nbsp;@Model.DocumentHeader.DocumentNumber</span>
+                </td>
+                <td class="R13C8" colspan="2">
+                    <span style="white-space:nowrap">Дата:</span>
+                </td>
+                <td class="R13C18" colspan="2">
+                    <span style="white-space:nowrap">@Model.DocumentHeader.DocumentData</span>
+                </td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr class="R14">
+                <td>&nbsp;</td>
+                <td colspan="2">&nbsp;</td>
+                <td colspan="4">&nbsp;</td>
+                <td colspan="2">&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td colspan="2">&nbsp;</td>
+                <td colspan="3">&nbsp;</td>
+                <td class="R14C16" colspan="2">&nbsp;</td>
+                <td class="R14C18">&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R15C1" colspan="6"><span style="white-space:nowrap">ОРИГИНАЛ</span></td>
+                <td colspan="2">&nbsp;</td>
+                <td class="R15C17" colspan="9">
+                    <span style="white-space:nowrap">Срок&nbsp;на&nbsp;плащане:</span>
+                </td>
+                <td class="R15C18" colspan="2"><span style="white-space:nowrap">@Model.DocumentHeader.DocumentDueData</span></td>
+                <td>&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>
+        @if (Model.DocumentHeader.RecipientInformation.TotalAmountDue != 0)
+        {
+            <span>Задължение на клиента: @Model.DocumentHeader.RecipientInformation.TotalAmountDue.ToString("F2") евро</span>
+        }
+    </p>
+    <table>
+        <colgroup>
+            <col width="31">
+            <col width="27">
+            <col width="34">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="47">
+            <col width="48">
+            <col width="42">
+            <col width="26">
+            <col width="13">
+            <col width="4">
+            <col width="55">
+            <col width="30">
+            <col width="25">
+            <col width="28">
+            <col width="36">
+            <col width="49">
+            <col width="111">
+        </colgroup>
+        <tbody>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R20C1" colspan="11"><span style="white-space:nowrap">ПОЛУЧАТЕЛ</span></td>
+                <td>&nbsp;</td>
+                <td class="R20C13" colspan="7"><span style="white-space:nowrap">ИЗДАТЕЛ</span></td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R21C1" colspan="2"><span style="white-space:nowrap">Фирма:</span></td>
+                <td class="R21C3" colspan="9">@Model.DocumentHeader.RecipientInformation.FullName</td>
+                <td>&nbsp;</td>
+                <td class="R21C1"><span style="white-space:nowrap">Фирма:</span></td>
+                <td class="R21C14" colspan="6">
+                    <span style="white-space:nowrap">@Model.DocumentHeader.SenderInformation.FullName</span>
+                </td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R21C1" colspan="2"><span style="white-space:nowrap">Адрес:</span></td>
+                <td class="R22C3" colspan="9">
+                    <span style="white-space:nowrap">@Model.DocumentHeader.RecipientInformation.Adrress</span>
+                </td>
+                <td>&nbsp;</td>
+                <td class="R21C1"><span style="white-space:nowrap">Обект:</span></td>
+                <td class="R21C14" colspan="6"><span style="white-space:nowrap">@Model.DocumentHeader.WarehouseName</span></td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R23C1" colspan="2"><span style="white-space:nowrap">Поръчка:</span></td>
+                <td class="R22C3" colspan="9"><span style="white-space:nowrap">@Model.DocumentHeader.OrderNumber</span></td>
+                <td>&nbsp</span></td>
+                <td class="R21C1"><span style="white-space:nowrap">Адрес:</span></td>
+                <td class="R21C14" colspan="6">
+                    <span style="white-space:nowrap">@Model.DocumentHeader.WarehouseAddress</span>
+                </td>
+                <td>&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+<section id="items">
+    <table>
+        <colgroup>
+            <col width="31">
+            <col width="27">
+            <col width="34">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="47">
+            <col width="48">
+            <col width="42">
+            <col width="26">
+            <col width="13">
+            <col width="4">
+            <col width="55">
+            <col width="30">
+            <col width="25">
+            <col width="28">
+            <col width="36">
+            <col width="49">
+            <col width="111">
+        </colgroup>
+        <thead>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R25C1"><span style="white-space:nowrap">№</span></td>
+                <td class="R25C2" colspan="5"><span style="white-space:nowrap">Код</span></td>
+                <td class="R25C7" colspan="3"><span style="white-space:nowrap">Наименование</span></td>
+                <td class="R25C10" colspan="3"><span style="white-space:nowrap">Мярка</span></td>
+                <td class="R25C13"><span style="white-space:nowrap">К-во</span></td>
+                <td class="R25C14" colspan="3"><span style="white-space:nowrap">Ед.&nbsp;цена</span></td>
+                <td class="R25C14" colspan="2"><span style="white-space:nowrap">Кр.&nbsp;цена</span></td>
+                <td class="R25C19"><span style="white-space:nowrap">Стойност</span></td>
+                <td>&nbsp;</td>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.DocumentItems.Length; i++)
+            {
+                var item = Model.DocumentItems[i];
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R26C1">@(i+1)</td>
+                <td class="R26C2" colspan="5">@item.CodeNumber</td>
+                <td class="R26C2" colspan="3">@item.Description</td>
+                <td class="R26C10" colspan="3">@item.UnitDemension</td>
+                <td class="R26C13">@item.Quantity.ToString("F2")</td>
+                <td class="R26C13" colspan="3">@ExVat(item.RetailPrice).ToString("F2")</td>
+                <td class="R26C13" colspan="2">@ExVat(item.SalesPrice).ToString("F2")</td>
+                <td class="R26C13">@ExVat(item.TotalSalesPrice).ToString("F2")</td>
+                <td>&nbsp;</td>
+            </tr>
+            }
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="19">&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R15C17" colspan="18"><span style="white-space:nowrap">Стойност (без ДДС):</span></td>
+                <td class="R15C17"><span style="white-space:nowrap">@ExVat(Model.DocumentFooter.TotalSalesPrice).ToString("F2") евро</span></td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R15C17" colspan="18"><span style="white-space:nowrap">Стойност (с ДДС):</span></td>
+                <td class="R15C17"><span style="white-space:nowrap">@Model.DocumentFooter.TotalSalesPrice.ToString("F2") евро</span></td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="19">&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+<section id="footer">
+    <table>
+        <colgroup>
+            <col width="31">
+            <col width="27">
+            <col width="34">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="25">
+            <col width="47">
+            <col width="48">
+            <col width="42">
+            <col width="26">
+            <col width="13">
+            <col width="4">
+            <col width="55">
+            <col width="30">
+            <col width="25">
+            <col width="28">
+            <col width="36">
+            <col width="49">
+            <col width="111">
+        </colgroup>
+        <tbody>
+            <tr>
+                <td class="R30C1" colspan="3"><span style="white-space:nowrap">Приел:</span></td>
+                <td class="R30C3" colspan="5">&nbsp;</td>
+                <td class="R30C1" colspan="8"><span style="white-space:nowrap">Предал:</span></td>
+                <td class="R30C3" colspan="3">&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="19">&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="2">&nbsp;</td>
+                <td class="R32C3" colspan="6">&nbsp;</td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+                <td colspan="2">&nbsp;</td>
+                <td colspan="3">&nbsp;</td>
+                <td class="R32C3" colspan="3"><span style="white-space:nowrap">@Model.DocumentFooter.AuthorName</span></td>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="19">&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td class="R30C3" colspan="3"><span style="white-space:nowrap">Отпечатано в: @DateTime.Now.ToString("dd.MM.yy HH:mm:ss")</span></td>
+                <td class="R30C3" colspan="16">&nbsp;</td>
+            </tr>
+            <tr>
+                <td>&nbsp;</td>
+                <td colspan="20">
+                    <span style="white-space:nowrap">Отпечатано с 1С:ПРЕДПРИЯТИЕ</span>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <section id="promo-image">
+        @if (!string.IsNullOrEmpty(Model.FileName))
+        {
+            <img src="/uploads/@Model.FileName" alt="">
+        }
+    </section>
+</section>

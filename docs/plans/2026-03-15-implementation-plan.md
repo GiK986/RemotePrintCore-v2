@@ -4,7 +4,7 @@
 
 **Goal:** Modernize RemotePrintCore from ASP.NET Core 2.2/Windows/IIS to .NET 8/Linux/Docker with Blazor UI, TCP printing, and notification channels.
 
-**Architecture:** Single .NET 8 project with SoapCore for SOAP endpoints, Playwright for PDF generation, TcpClient for printing, Blazor Server + MudBlazor for Web UI, SQLite for data, Docker for deployment behind existing Traefik reverse proxy.
+**Architecture:** Single .NET 10.0 project with SoapCore for SOAP endpoints, Playwright for PDF generation, TcpClient for printing, Blazor Server + MudBlazor for Web UI, SQLite for data, Docker for deployment behind existing Traefik reverse proxy.
 
 **Tech Stack:** .NET 8, SoapCore NuGet, Playwright, EF Core + SQLite, Blazor Server, MudBlazor, MailKit, Telegram.Bot, Docker
 
@@ -88,7 +88,7 @@ git push -u origin main
 
 ## Phase 1: Foundation
 
-### Task 1: Create .NET 8 project + NuGet packages
+### Task 1: Create .NET 10.0project + NuGet packages
 
 **Files:**
 - Create: `src/RemotePrintCore.Web/RemotePrintCore.Web.csproj`

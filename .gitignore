@@ -475,3 +475,15 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# Environment files
+.env
+*.env
+
+# Local development settings
+appsettings.Development.json
+
+# SQLite database
+*.db
+*.db-shm
+*.db-wal

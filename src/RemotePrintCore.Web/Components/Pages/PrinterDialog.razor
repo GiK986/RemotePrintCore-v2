@@ -1,0 +1,97 @@
+@using RemotePrintCore.Web.Models.Entities
+@using RemotePrintCore.Web.Services.Printing
+@inject IPrinterService PrinterService
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@MudDialog.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_formValid">
+            <MudGrid Spacing="2" AlignItems="AlignItems.End">
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="FormModel.Name" Label="Name" Required="true"
+                                  RequiredError="Name is required" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField @bind-Value="FormModel.IpAddress" Label="IP Address" Required="true"
+                                  RequiredError="IP address is required" />
+                </MudItem>
+                <MudItem xs="6" md="2">
+                    <MudNumericField @bind-Value="FormModel.Port" Label="Port" Min="1" Max="65535"
+                                     Required="true" />
+                </MudItem>
+                <MudItem xs="6" md="2" Class="d-flex align-end pb-1">
+                    <MudCheckBox @bind-Value="FormModel.IsActive" Label="Active" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+
+        @if (_testResult != null)
+        {
+            <MudAlert Severity="@(_testOk ? Severity.Success : Severity.Error)"
+                      Dense="true" Class="mt-3">
+                @_testResult
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton StartIcon="@Icons.Material.Filled.NetworkCheck"
+                   OnClick="TestConnection" Disabled="_testing"
+                   Color="Color.Info" Variant="Variant.Outlined">
+            @(_testing ? "Testing..." : "Test Connection")
+        </MudButton>
+        <MudSpacer />
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="Submit" Disabled="!_formValid">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public PrinterFormModel FormModel { get; set; } = new();
+
+    private MudForm _form = default!;
+    private bool _formValid;
+    private bool _testing;
+    private string? _testResult;
+    private bool _testOk;
+
+    private async Task TestConnection()
+    {
+        if (string.IsNullOrWhiteSpace(FormModel.IpAddress) || FormModel.Port <= 0)
+        {
+            _testResult = "Enter IP address and port first.";
+            _testOk = false;
+            return;
+        }
+
+        _testing = true;
+        _testResult = null;
+        _testOk = await PrinterService.TestConnectionAsync(FormModel.IpAddress, FormModel.Port);
+        _testResult = _testOk ? $"Connection to {FormModel.IpAddress}:{FormModel.Port} OK"
+                               : $"Cannot reach {FormModel.IpAddress}:{FormModel.Port}";
+        _testing = false;
+    }
+
+    private async Task Submit()
+    {
+        await _form.ValidateAsync();
+        if (_formValid)
+            MudDialog.Close(DialogResult.Ok(FormModel));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public class PrinterFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string IpAddress { get; set; } = string.Empty;
+        public int Port { get; set; } = 9100;
+        public bool IsActive { get; set; } = true;
+    }
+}

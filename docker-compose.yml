@@ -1,0 +1,31 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: src/RemotePrintCore.Web/Dockerfile
+    image: remoteprintcore-v2:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    volumes:
+      - sqlite_data:/app/data
+      - uploads:/app/wwwroot/uploads
+      - logs:/app/logs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.remoteprintcore.rule=Host(`rrp.autoplus.bg`)"
+      - "traefik.http.routers.remoteprintcore.entrypoints=websecure"
+      - "traefik.http.routers.remoteprintcore.tls.certresolver=letsencrypt"
+      - "traefik.http.services.remoteprintcore.loadbalancer.server.port=8080"
+    networks:
+      - proxy
+
+volumes:
+  sqlite_data:
+  uploads:
+  logs:
+
+networks:
+  proxy:
+    external: true

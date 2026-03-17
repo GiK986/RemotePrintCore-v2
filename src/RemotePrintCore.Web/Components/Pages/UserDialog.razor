@@ -1,0 +1,55 @@
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">@MudDialog.Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (IsEditMode)
+        {
+            <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">@FormModel.Email</MudText>
+        }
+        else
+        {
+            <MudTextField @bind-Value="FormModel.Email" Label="Email" Required="true"
+                          InputType="InputType.Email" Class="mb-3" />
+            <MudTextField @bind-Value="FormModel.Password" Label="Password" Required="true"
+                          InputType="InputType.Password" Class="mb-3" />
+        }
+        <MudSelect @bind-Value="FormModel.Role" Label="Role" Required="true">
+            @foreach (var role in AvailableRoles)
+            {
+                <MudSelectItem T="string" Value="@role">@role</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Submit">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public UserFormModel FormModel { get; set; } = new();
+    [Parameter] public bool IsEditMode { get; set; }
+    [Parameter] public List<string> AvailableRoles { get; set; } = [];
+
+    private void Submit()
+    {
+        if (!IsEditMode && (string.IsNullOrWhiteSpace(FormModel.Email) || string.IsNullOrWhiteSpace(FormModel.Password)))
+            return;
+        if (string.IsNullOrWhiteSpace(FormModel.Role))
+            return;
+        MudDialog.Close(DialogResult.Ok(FormModel));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    public class UserFormModel
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+    }
+}

@@ -1,0 +1,140 @@
+@page "/printlog"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.EntityFrameworkCore
+@using RemotePrintCore.Web.Data
+@using RemotePrintCore.Web.Models.Entities
+@using RemotePrintCore.Web.Services.PrintLog
+@inject IPrintLogService PrintLogService
+@inject AppDbContext Db
+
+<MudText Typo="Typo.h4" Class="mb-4">Print Log</MudText>
+
+@* Filters *@
+<MudPaper Class="pa-4 mb-4" Elevation="1">
+    <MudGrid>
+        <MudItem xs="12" sm="6" md="3">
+            <MudDatePicker @bind-Date="_fromDate" Label="From" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudDatePicker @bind-Date="_toDate" Label="To" Clearable="true" />
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudSelect @bind-Value="_printerFilter" Label="Printer" Clearable="true">
+                <MudSelectItem T="string?" Value="null">All</MudSelectItem>
+                @foreach (var name in _printerNames)
+                {
+                    <MudSelectItem T="string?" Value="@name">@name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudSelect @bind-Value="_templateFilter" Label="Template" Clearable="true">
+                <MudSelectItem T="string?" Value="null">All</MudSelectItem>
+                @foreach (var name in _templateNames)
+                {
+                    <MudSelectItem T="string?" Value="@name">@name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="2">
+            <MudSelect @bind-Value="_statusFilter" Label="Status" Clearable="true">
+                <MudSelectItem T="PrintStatus?" Value="null">All</MudSelectItem>
+                <MudSelectItem T="PrintStatus?" Value="PrintStatus.Success">Success</MudSelectItem>
+                <MudSelectItem T="PrintStatus?" Value="PrintStatus.Error">Error</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Search"
+                       OnClick="Search">Search</MudButton>
+            <MudButton Class="ml-2" OnClick="Reset">Reset</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Results *@
+<MudTable Items="_logs" Dense="true" Hover="true" Loading="_loading" FixedHeader="true" Height="500px">
+    <HeaderContent>
+        <MudTh>Time</MudTh>
+        <MudTh>Document</MudTh>
+        <MudTh>Customer</MudTh>
+        <MudTh>Printer</MudTh>
+        <MudTh>Template</MudTh>
+        <MudTh>Copies</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Error</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.CreatedOn.ToString("dd.MM.yyyy HH:mm:ss")</MudTd>
+        <MudTd>@context.DocumentNumber</MudTd>
+        <MudTd>@context.CustomerName</MudTd>
+        <MudTd>@context.PrinterName</MudTd>
+        <MudTd>@context.TemplateName</MudTd>
+        <MudTd>@context.NumberOfCopies</MudTd>
+        <MudTd>
+            <MudChip T="string" Color="@(context.Status == PrintStatus.Success ? Color.Success : Color.Error)"
+                     Size="Size.Small">
+                @context.Status
+            </MudChip>
+        </MudTd>
+        <MudTd>
+            @if (!string.IsNullOrEmpty(context.ErrorMessage))
+            {
+                <MudTooltip Text="@context.ErrorMessage">
+                    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" Size="Size.Small" />
+                </MudTooltip>
+            }
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Color="Color.Secondary">No records found</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+<MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-2">
+    @_logs.Count record(s)
+</MudText>
+
+@code {
+    private List<Models.Entities.PrintLog> _logs = [];
+    private List<string> _printerNames = [];
+    private List<string> _templateNames = [];
+    private bool _loading = true;
+
+    private DateTime? _fromDate = DateTime.UtcNow.Date.AddDays(-7);
+    private DateTime? _toDate = DateTime.UtcNow.Date;
+    private string? _printerFilter;
+    private string? _templateFilter;
+    private PrintStatus? _statusFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _printerNames = await Db.Printers.OrderBy(p => p.Name).Select(p => p.Name).ToListAsync();
+        _templateNames = await Db.DocumentTemplates.OrderBy(t => t.Name).Select(t => t.Name).ToListAsync();
+        await Search();
+    }
+
+    private async Task Search()
+    {
+        _loading = true;
+        // Treat picked dates as UTC day boundaries (CreatedOn is stored in UTC)
+        var from = _fromDate.HasValue
+            ? DateTime.SpecifyKind(_fromDate.Value.Date, DateTimeKind.Utc)
+            : (DateTime?)null;
+        var to = _toDate.HasValue
+            ? DateTime.SpecifyKind(_toDate.Value.Date.AddDays(1), DateTimeKind.Utc)
+            : (DateTime?)null;
+        _logs = await PrintLogService.SearchAsync(from, to, _printerFilter, _templateFilter, _statusFilter);
+        _loading = false;
+    }
+
+    private async Task Reset()
+    {
+        _fromDate = DateTime.UtcNow.Date.AddDays(-7);
+        _toDate = DateTime.UtcNow.Date;
+        _printerFilter = null;
+        _templateFilter = null;
+        _statusFilter = null;
+        await Search();
+    }
+}

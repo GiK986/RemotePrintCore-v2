@@ -1,0 +1,168 @@
+@page "/users"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.AspNetCore.Identity
+@using RemotePrintCore.Web.Models.Entities
+@inject UserManager<ApplicationUser> UserManager
+@inject RoleManager<ApplicationRole> RoleManager
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<MudText Typo="Typo.h4" Class="mb-4">Users</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd"
+           OnClick="OpenAddDialog" Class="mb-4">
+    Add User
+</MudButton>
+
+<MudTable Items="_users" Dense="true" Hover="true" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Email</MudTh>
+        <MudTh>Roles</MudTh>
+        <MudTh>Created</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.User.Email</MudTd>
+        <MudTd>
+            @foreach (var role in context.Roles)
+            {
+                <MudChip T="string" Size="Size.Small" Color="Color.Primary" Class="mr-1">@role</MudChip>
+            }
+        </MudTd>
+        <MudTd>@context.User.CreatedOn.ToString("dd.MM.yyyy")</MudTd>
+        <MudTd>
+            <MudTooltip Text="Edit Role">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               Color="Color.Primary" OnClick="() => OpenEditDialog(context)" />
+            </MudTooltip>
+            <MudTooltip Text="Change Password">
+                <MudIconButton Icon="@Icons.Material.Filled.Key" Size="Size.Small"
+                               Color="Color.Warning" OnClick="() => OpenChangePasswordDialog(context.User)" />
+            </MudTooltip>
+            <MudTooltip Text="Delete">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                               Color="Color.Error" OnClick="() => DeleteUser(context.User)"
+                               Disabled="@(_currentUserEmail == context.User.Email)" />
+            </MudTooltip>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Color="Color.Secondary">No users found</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private record UserRow(ApplicationUser User, IList<string> Roles);
+
+    private List<UserRow> _users = [];
+    private bool _loading = true;
+    private string? _currentUserEmail;
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Small, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _currentUserEmail = authState.User.Identity?.Name;
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _loading = true;
+        var users = UserManager.Users.Where(u => !u.IsDeleted).OrderBy(u => u.Email).ToList();
+        _users = [];
+        foreach (var u in users)
+            _users.Add(new UserRow(u, await UserManager.GetRolesAsync(u)));
+        _loading = false;
+    }
+
+    private async Task OpenAddDialog()
+    {
+        var roles = RoleManager.Roles.Select(r => r.Name!).OrderBy(r => r).ToList();
+        var parameters = new DialogParameters<UserDialog>
+        {
+            { x => x.FormModel, new UserDialog.UserFormModel() },
+            { x => x.IsEditMode, false },
+            { x => x.AvailableRoles, roles },
+        };
+        var dialog = await DialogService.ShowAsync<UserDialog>("Add User", parameters, _dialogOptions);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            var model = (UserDialog.UserFormModel)result.Data!;
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                EmailConfirmed = true,
+                CreatedOn = DateTime.UtcNow,
+            };
+            var createResult = await UserManager.CreateAsync(user, model.Password);
+            if (createResult.Succeeded)
+            {
+                if (!string.IsNullOrEmpty(model.Role))
+                    await UserManager.AddToRoleAsync(user, model.Role);
+                await LoadUsers();
+                Snackbar.Add("User created.", Severity.Success);
+            }
+            else
+            {
+                var errors = string.Join(", ", createResult.Errors.Select(e => e.Description));
+                Snackbar.Add(errors, Severity.Error);
+            }
+        }
+    }
+
+    private async Task OpenEditDialog(UserRow row)
+    {
+        var roles = RoleManager.Roles.Select(r => r.Name!).OrderBy(r => r).ToList();
+        var currentRole = row.Roles.FirstOrDefault() ?? string.Empty;
+        var parameters = new DialogParameters<UserDialog>
+        {
+            { x => x.FormModel, new UserDialog.UserFormModel { Email = row.User.Email!, Role = currentRole } },
+            { x => x.IsEditMode, true },
+            { x => x.AvailableRoles, roles },
+        };
+        var dialog = await DialogService.ShowAsync<UserDialog>("Edit User", parameters, _dialogOptions);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            var model = (UserDialog.UserFormModel)result.Data!;
+            var currentRoles = await UserManager.GetRolesAsync(row.User);
+            await UserManager.RemoveFromRolesAsync(row.User, currentRoles);
+            if (!string.IsNullOrEmpty(model.Role))
+                await UserManager.AddToRoleAsync(row.User, model.Role);
+            await LoadUsers();
+            Snackbar.Add("User updated.", Severity.Success);
+        }
+    }
+
+    private async Task OpenChangePasswordDialog(ApplicationUser user)
+    {
+        var dialog = await DialogService.ShowAsync<ChangePasswordDialog>("Change Password", _dialogOptions);
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            var newPassword = (string)result.Data!;
+            var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+            var resetResult = await UserManager.ResetPasswordAsync(user, token, newPassword);
+            if (resetResult.Succeeded)
+                Snackbar.Add("Password changed.", Severity.Success);
+            else
+            {
+                var errors = string.Join(", ", resetResult.Errors.Select(e => e.Description));
+                Snackbar.Add(errors, Severity.Error);
+            }
+        }
+    }
+
+    private async Task DeleteUser(ApplicationUser user)
+    {
+        user.IsDeleted = true;
+        user.DeletedOn = DateTime.UtcNow;
+        await UserManager.UpdateAsync(user);
+        await LoadUsers();
+        Snackbar.Add("User deleted.", Severity.Info);
+    }
+}

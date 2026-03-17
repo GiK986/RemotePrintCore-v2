@@ -1,0 +1,134 @@
+@page "/templates"
+@attribute [Authorize(Roles = "Administrator")]
+@using Microsoft.EntityFrameworkCore
+@using RemotePrintCore.Web.Data
+@using RemotePrintCore.Web.Models.Entities
+@inject AppDbContext Db
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IWebHostEnvironment Env
+
+<MudText Typo="Typo.h4" Class="mb-4">Document Templates</MudText>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+           OnClick="OpenAddDialog" Class="mb-4">
+    Add Template
+</MudButton>
+
+<MudTable Items="_templates" Dense="true" Hover="true" Loading="_loading">
+    <HeaderContent>
+        <MudTh>Name</MudTh>
+        <MudTh>Template Views</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>@context.Name</MudTd>
+        <MudTd>
+            @foreach (var v in context.Values.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                <MudChip T="string" Size="Size.Small" Class="mr-1">@v.Trim()</MudChip>
+            }
+        </MudTd>
+        <MudTd>
+            <MudTooltip Text="Edit">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                               OnClick="() => OpenEditDialog(context)" />
+            </MudTooltip>
+            <MudTooltip Text="Delete">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                               OnClick="() => DeleteTemplate(context)" />
+            </MudTooltip>
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText Color="Color.Secondary">No templates configured yet</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@code {
+    private List<DocumentTemplate> _templates = [];
+    private bool _loading = true;
+    private readonly DialogOptions _dialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private List<string> _availableViews = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var viewsPath = Path.Combine(Env.ContentRootPath, "Views", "Export");
+        _availableViews = Directory.Exists(viewsPath)
+            ? [.. Directory.GetFiles(viewsPath, "DocumentTemplate*.cshtml")
+                .Select(f => Path.GetFileNameWithoutExtension(f))
+                .Order()]
+            : [];
+        await LoadTemplates();
+    }
+
+    private async Task LoadTemplates()
+    {
+        _loading = true;
+        _templates = await Db.DocumentTemplates.OrderBy(t => t.Name).ToListAsync();
+        _loading = false;
+    }
+
+    private async Task OpenAddDialog()
+    {
+        var parameters = new DialogParameters<TemplateDialog>
+        {
+            { x => x.FormModel, new TemplateDialog.TemplateFormModel() },
+            { x => x.AvailableViews, _availableViews },
+        };
+        var dialog = await DialogService.ShowAsync<TemplateDialog>("Add Template", parameters, _dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            var model = (TemplateDialog.TemplateFormModel)result.Data!;
+            Db.DocumentTemplates.Add(new DocumentTemplate
+            {
+                Name = model.Name,
+                Values = model.Values,
+            });
+            await Db.SaveChangesAsync();
+            await LoadTemplates();
+            Snackbar.Add("Template added.", Severity.Success);
+        }
+    }
+
+    private async Task OpenEditDialog(DocumentTemplate template)
+    {
+        var parameters = new DialogParameters<TemplateDialog>
+        {
+            {
+                x => x.FormModel, new TemplateDialog.TemplateFormModel
+                {
+                    Name = template.Name,
+                    Values = template.Values,
+                }
+            },
+            { x => x.AvailableViews, _availableViews },
+        };
+        var dialog = await DialogService.ShowAsync<TemplateDialog>("Edit Template", parameters, _dialogOptions);
+        var result = await dialog.Result;
+
+        if (!result!.Canceled)
+        {
+            var model = (TemplateDialog.TemplateFormModel)result.Data!;
+            var entity = await Db.DocumentTemplates.FindAsync(template.Id);
+            if (entity != null)
+            {
+                entity.Name = model.Name;
+                entity.Values = model.Values;
+                await Db.SaveChangesAsync();
+            }
+            await LoadTemplates();
+            Snackbar.Add("Template updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeleteTemplate(DocumentTemplate template)
+    {
+        Db.DocumentTemplates.Remove(template);
+        await Db.SaveChangesAsync();
+        await LoadTemplates();
+        Snackbar.Add($"Template '{template.Name}' deleted.", Severity.Info);
+    }
+}
