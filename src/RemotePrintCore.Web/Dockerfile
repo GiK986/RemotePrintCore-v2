@@ -9,6 +9,9 @@ COPY . .
 RUN dotnet publish src/RemotePrintCore.Web/RemotePrintCore.Web.csproj \
     -c Release -o /app/publish --no-restore
 
+RUN echo "=== publish/wwwroot ===" && ls /app/publish/wwwroot/ && \
+    echo "=== _framework ===" && ls /app/publish/wwwroot/_framework/ 2>/dev/null || echo "_framework MISSING in publish"
+
 # Install Playwright CLI and download Chromium into /ms-playwright
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 RUN dotnet tool install --global Microsoft.Playwright.CLI \
