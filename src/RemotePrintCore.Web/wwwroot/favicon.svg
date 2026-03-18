@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <path d="M64,13L64,51C64,58.175 58.175,64 51,64L13,64C5.825,64 0,58.175 0,51L0,13C0,5.825 5.825,0 13,0L51,0C58.175,0 64,5.825 64,13Z" style="fill:rgb(28,46,107);"/>
+    <path d="M13,10L38,10L51,23L51,54L13,54L13,10Z" style="fill:rgb(232,237,245);fill-rule:nonzero;"/>
+    <path d="M38,10L51,23L38,23L38,10Z" style="fill:rgb(157,174,196);fill-rule:nonzero;"/>
+    <path d="M38,10L38,23" style="fill:none;fill-rule:nonzero;stroke:rgb(184,200,216);stroke-width:0.5px;"/>
+    <path d="M39,33.25C39,33.94 38.44,34.5 37.75,34.5L20.25,34.5C19.56,34.5 19,33.94 19,33.25C19,32.56 19.56,32 20.25,32L37.75,32C38.44,32 39,32.56 39,33.25Z" style="fill:rgb(74,96,128);fill-opacity:0.55;"/>
+    <path d="M39,39.25C39,39.94 38.44,40.5 37.75,40.5L20.25,40.5C19.56,40.5 19,39.94 19,39.25C19,38.56 19.56,38 20.25,38L37.75,38C38.44,38 39,38.56 39,39.25Z" style="fill:rgb(74,96,128);fill-opacity:0.55;"/>
+    <path d="M32,45.25C32,45.94 31.44,46.5 30.75,46.5L20.25,46.5C19.56,46.5 19,45.94 19,45.25C19,44.56 19.56,44 20.25,44L30.75,44C31.44,44 32,44.56 32,45.25Z" style="fill:rgb(74,96,128);fill-opacity:0.55;"/>
+    <circle cx="48" cy="50" r="11" style="fill:rgb(0,188,212);"/>
+    <g transform="matrix(1,0,0,1,0,11)">
+        <path d="M51.5,41L51.5,44C51.5,44.552 51.052,45 50.5,45L45.5,45C44.948,45 44.5,44.552 44.5,44L44.5,41C44.5,40.448 44.948,40 45.5,40L50.5,40C51.052,40 51.5,40.448 51.5,41Z" style="fill:white;fill-opacity:0.9;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,0,2.5)">
+        <path d="M55,46L55,50C55,51.104 54.104,52 53,52L43,52C41.896,52 41,51.104 41,50L41,46C41,44.896 41.896,44 43,44L53,44C54.104,44 55,44.896 55,46Z" style="fill:white;"/>
+    </g>
+    <g transform="matrix(1,0,0,1,1,4.5)">
+        <circle cx="52" cy="48" r="1" style="fill:rgb(0,188,212);"/>
+    </g>
+    <g transform="matrix(1,0,0,1,0,-7)">
+        <path d="M51.5,51L51.5,54C51.5,54.552 51.052,55 50.5,55L45.5,55C44.948,55 44.5,54.552 44.5,54L44.5,51C44.5,50.448 44.948,50 45.5,50L50.5,50C51.052,50 51.5,50.448 51.5,51Z" style="fill:white;fill-opacity:0.9;"/>
+    </g>
+</svg>

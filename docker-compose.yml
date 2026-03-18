@@ -5,24 +5,14 @@ services:
     env_file: .env
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
+    ports:
+      - 8080:8080
     volumes:
       - sqlite_data:/app/data
       - uploads:/app/wwwroot/uploads
       - logs:/app/logs
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.remoteprintcore.rule=Host(`domainname`)"
-      - "traefik.http.routers.remoteprintcore.entrypoints=websecure"
-      - "traefik.http.routers.remoteprintcore.tls.certresolver=letsencrypt"
-      - "traefik.http.services.remoteprintcore.loadbalancer.server.port=8080"
-    networks:
-      - proxy
 
 volumes:
   sqlite_data:
   uploads:
   logs:
-
-networks:
-  proxy:
-    external: true

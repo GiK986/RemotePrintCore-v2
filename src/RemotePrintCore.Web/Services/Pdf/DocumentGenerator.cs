@@ -7,16 +7,19 @@ public class DocumentGenerator : IDocumentGenerator
 {
     private readonly IViewRenderService _viewRenderService;
     private readonly IHtmlToPdfConverter _htmlToPdfConverter;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly string _wwwrootPath;
 
     public DocumentGenerator(
         IViewRenderService viewRenderService,
         IHtmlToPdfConverter htmlToPdfConverter,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        IHttpClientFactory httpClientFactory)
     {
         _viewRenderService = viewRenderService;
         _htmlToPdfConverter = htmlToPdfConverter;
         _wwwrootPath = env.WebRootPath;
+        _httpClientFactory = httpClientFactory;
     }
 
     public async Task<byte[]> GenerateAsync(string templateName, object model)
@@ -25,8 +28,32 @@ public class DocumentGenerator : IDocumentGenerator
             $"~/Views/Export/{templateName}.cshtml", model);
 
         html = InlineLocalAssets(html);
+        html = await InlineExternalImagesAsync(html);
 
         return await _htmlToPdfConverter.ConvertAsync(html);
+    }
+
+    private async Task<string> InlineExternalImagesAsync(string html)
+    {
+        var matches = Regex.Matches(html, @"src=""(https?://[^""]+)""", RegexOptions.IgnoreCase);
+        var http = _httpClientFactory.CreateClient();
+
+        foreach (Match m in matches)
+        {
+            var url = m.Groups[1].Value;
+            try
+            {
+                var bytes = await http.GetByteArrayAsync(url);
+                var mime = url.Contains(".png") ? "image/png"
+                         : url.Contains(".jpg") || url.Contains(".jpeg") ? "image/jpeg"
+                         : "image/png"; // qrserver returns PNG by default
+                var base64 = Convert.ToBase64String(bytes);
+                html = html.Replace(m.Value, $@"src=""data:{mime};base64,{base64}""");
+            }
+            catch { /* leave original URL on failure */ }
+        }
+
+        return html;
     }
 
     private string InlineLocalAssets(string html)
