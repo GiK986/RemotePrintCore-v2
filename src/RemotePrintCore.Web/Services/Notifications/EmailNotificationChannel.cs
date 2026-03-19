@@ -35,11 +35,20 @@ public class EmailNotificationChannel
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_fromName, _fromAddress));
         message.To.Add(MailboxAddress.Parse(toEmail));
-        message.Subject = $"Document {documentNumber}";
+        message.Subject = $"Документ №{documentNumber}";
 
         var builder = new BodyBuilder
         {
-            TextBody = $"Please find attached document {documentNumber}.",
+            TextBody = $"""
+                Здравейте,
+
+                Моля, намерете приложен документ с номер {documentNumber}.
+
+                ──────────────────────────────
+                Този имейл е генериран автоматично.
+                Моля, не отговаряйте на него.
+                ──────────────────────────────
+                """,
         };
         builder.Attachments.Add($"{documentNumber}.pdf", pdfBytes, new ContentType("application", "pdf"));
         message.Body = builder.ToMessageBody();
