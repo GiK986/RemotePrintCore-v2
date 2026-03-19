@@ -65,7 +65,7 @@
         <MudTh>Error</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd>@context.CreatedOn.ToString("dd.MM.yyyy HH:mm:ss")</MudTd>
+        <MudTd>@context.CreatedOn.ToLocalTime().ToString("dd.MM.yyyy HH:mm:ss")</MudTd>
         <MudTd>@context.DocumentNumber</MudTd>
         <MudTd>@context.CustomerName</MudTd>
         <MudTd>@context.PrinterName</MudTd>
@@ -101,8 +101,8 @@
     private List<string> _templateNames = [];
     private bool _loading = true;
 
-    private DateTime? _fromDate = DateTime.UtcNow.Date.AddDays(-7);
-    private DateTime? _toDate = DateTime.UtcNow.Date;
+    private DateTime? _fromDate = DateTime.Today.AddDays(-7);
+    private DateTime? _toDate = DateTime.Today;
     private string? _printerFilter;
     private string? _templateFilter;
     private PrintStatus? _statusFilter;
@@ -119,10 +119,10 @@
         _loading = true;
         // Treat picked dates as UTC day boundaries (CreatedOn is stored in UTC)
         var from = _fromDate.HasValue
-            ? DateTime.SpecifyKind(_fromDate.Value.Date, DateTimeKind.Utc)
+            ? DateTime.SpecifyKind(_fromDate.Value.Date, DateTimeKind.Local).ToUniversalTime()
             : (DateTime?)null;
         var to = _toDate.HasValue
-            ? DateTime.SpecifyKind(_toDate.Value.Date.AddDays(1), DateTimeKind.Utc)
+            ? DateTime.SpecifyKind(_toDate.Value.Date.AddDays(1), DateTimeKind.Local).ToUniversalTime()
             : (DateTime?)null;
         _logs = await PrintLogService.SearchAsync(from, to, _printerFilter, _templateFilter, _statusFilter);
         _loading = false;
@@ -130,8 +130,8 @@
 
     private async Task Reset()
     {
-        _fromDate = DateTime.UtcNow.Date.AddDays(-7);
-        _toDate = DateTime.UtcNow.Date;
+        _fromDate = DateTime.Today.AddDays(-7);
+        _toDate = DateTime.Today;
         _printerFilter = null;
         _templateFilter = null;
         _statusFilter = null;
