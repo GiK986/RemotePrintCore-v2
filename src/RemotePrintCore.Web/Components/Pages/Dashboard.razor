@@ -180,7 +180,7 @@
             .OrderBy(p => p.Name)
             .ToListAsync();
 
-        _recentLogs = await PrintLogService.GetRecentAsync(50);
+        _recentLogs = await PrintLogService.GetRecentAsync(15);
 
         var todayLogs = await Db.PrintLogs
             .Where(l => l.CreatedOn >= today)
