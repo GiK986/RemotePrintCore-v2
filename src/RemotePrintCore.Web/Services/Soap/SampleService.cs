@@ -90,6 +90,12 @@ public class SampleService : ISampleService
             byte[]? lastPdf = null;
             foreach (var templateName in templateNames)
             {
+                if (templateName.Trim() == "DocumentTemplateTR"
+                    && (viewModel.DocumentHeader?.Comment?.Contains("зареждане", StringComparison.OrdinalIgnoreCase) ?? false))
+                {
+                    continue;
+                }
+
                 var pdf = await _documentGenerator.GenerateAsync(templateName.Trim(), viewModel);
                 await _printerService.PrintAsync(printerName, pdf, copies);
                 lastPdf ??= pdf;
