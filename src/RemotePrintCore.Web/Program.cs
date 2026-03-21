@@ -16,7 +16,7 @@ using SoapCore;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 14)
     .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
