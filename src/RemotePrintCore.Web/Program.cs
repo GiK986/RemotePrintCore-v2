@@ -4,6 +4,7 @@ using MudBlazor.Services;
 using RemotePrintCore.Web.Components;
 using RemotePrintCore.Web.Data;
 using RemotePrintCore.Web.Models.Entities;
+using RemotePrintCore.Web.Services;
 using RemotePrintCore.Web.Services.Banners;
 using RemotePrintCore.Web.Services.Notifications;
 using RemotePrintCore.Web.Services.Pdf;
@@ -71,6 +72,7 @@ builder.Services.AddScoped<IBannerService, BannerService>();
 builder.Services.AddScoped<IDocumentTemplatesService, DocumentTemplatesService>();
 builder.Services.AddScoped<IPrintLogService, PrintLogService>();
 builder.Services.AddScoped<INotificationDispatcher, NotificationDispatcher>();
+builder.Services.AddHostedService<LogCleanupService>();
 
 var app = builder.Build();
 
