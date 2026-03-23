@@ -121,6 +121,89 @@ app.MapPost("/api/banner-upload", async (IFormFile file, IWebHostEnvironment env
     return Results.Ok(new { tempFileName = tempName });
 }).DisableAntiforgery();
 
+// Template preview (renders cshtml with dummy data for visual inspection)
+app.MapGet("/preview/{template}", async (string template, IViewRenderService viewRenderer, IWebHostEnvironment env) =>
+{
+    var viewsPath = Path.Combine(env.ContentRootPath, "Views", "Export");
+    var valid = Directory.GetFiles(viewsPath, "DocumentTemplate*.cshtml")
+        .Select(Path.GetFileNameWithoutExtension)
+        .ToHashSet();
+
+    if (!valid.Contains(template))
+        return Results.NotFound($"Template '{template}' not found.");
+
+    var model = new RemotePrintCore.Web.Models.ViewModels.DocumentInfoViewModel
+    {
+        IsSofiaTransit = false,
+        FileName = "preview",
+        DocumentHeader = new RemotePrintCore.Web.Models.ViewModels.DocumentHeaderViewModel
+        {
+            DocumentNumber = "000123",
+            OrderNumber = "ORD-2026-001",
+            DocumentData = new DateTime(2026, 3, 23),
+            DocumentDueData = "30.03.2026",
+            WarehouseName = "Склад София",
+            WarehouseAddress = "ул. Примерна 1, София",
+            Comment = "Примерен коментар към документа",
+            RecipientInformation = new RemotePrintCore.Web.Models.ViewModels.RecipientInformationViewModel
+            {
+                FullName = "Иван Иванов ООД",
+                Adrress = "бул. Витоша 100, София 1000",
+                TotalAmountDue = 1250.00m,
+            },
+            SenderInformation = new RemotePrintCore.Web.Models.ViewModels.SenderInformationViewModel
+            {
+                FullName = "Дистрибуция АД",
+                Adrress = "ул. Складова 5, София 1592",
+            },
+        },
+        DocumentItems =
+        [
+            new RemotePrintCore.Web.Models.ViewModels.DocumentItemViewModel
+            {
+                CodeNumber = "ART-001",
+                Description = "Минерална вода 0.5л",
+                Quantity = 24,
+                UnitDemension = "бр",
+                RetailPrice = 0.80,
+                SalesPrice = 0.65,
+                TotalSalesPrice = 15.60,
+                PaletNumber = "П-01",
+            },
+            new RemotePrintCore.Web.Models.ViewModels.DocumentItemViewModel
+            {
+                CodeNumber = "ART-002",
+                Description = "Сок портокал 1л",
+                Quantity = 12,
+                UnitDemension = "бр",
+                RetailPrice = 2.50,
+                SalesPrice = 2.10,
+                TotalSalesPrice = 25.20,
+                PaletNumber = "П-01",
+            },
+            new RemotePrintCore.Web.Models.ViewModels.DocumentItemViewModel
+            {
+                CodeNumber = "ART-003",
+                Description = "Хляб пшеничен 500г",
+                Quantity = 50,
+                UnitDemension = "бр",
+                RetailPrice = 1.40,
+                SalesPrice = 1.20,
+                TotalSalesPrice = 60.00,
+                PaletNumber = "П-02",
+            },
+        ],
+        DocumentFooter = new RemotePrintCore.Web.Models.ViewModels.DocumentFooterViewModel
+        {
+            TotalSalesPrice = 100.80,
+            AuthorName = "Петър Петров",
+        },
+    };
+
+    var html = await viewRenderer.RenderToStringAsync($"~/Views/Export/{template}.cshtml", model);
+    return Results.Content(html, "text/html");
+}).RequireAuthorization();
+
 // Blazor
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
