@@ -14,7 +14,7 @@
 
 @if (!string.IsNullOrEmpty(_selected))
 {
-    <iframe src="/preview/@_selected"
+    <iframe src="/preview/@Uri.EscapeDataString(_selected!)"
             style="width:100%; height:80vh; border:1px solid #ccc; border-radius:4px;"
             title="Template Preview">
     </iframe>
