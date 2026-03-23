@@ -1,0 +1,38 @@
+@page "/template-preview"
+@attribute [Authorize(Roles = "Administrator")]
+@inject IWebHostEnvironment Env
+
+<MudText Typo="Typo.h4" Class="mb-4">Template Preview</MudText>
+
+<MudSelect T="string" Label="Select Template" @bind-Value="_selected"
+           Variant="Variant.Outlined" Class="mb-4" Style="max-width:400px">
+    @foreach (var t in _templates)
+    {
+        <MudSelectItem Value="@t">@t</MudSelectItem>
+    }
+</MudSelect>
+
+@if (!string.IsNullOrEmpty(_selected))
+{
+    <iframe src="/preview/@_selected"
+            style="width:100%; height:80vh; border:1px solid #ccc; border-radius:4px;"
+            title="Template Preview">
+    </iframe>
+}
+
+@code {
+    private List<string> _templates = [];
+    private string? _selected;
+
+    protected override void OnInitialized()
+    {
+        var viewsPath = Path.Combine(Env.ContentRootPath, "Views", "Export");
+        _templates = Directory.Exists(viewsPath)
+            ? [.. Directory.GetFiles(viewsPath, "DocumentTemplate*.cshtml")
+                .Select(f => Path.GetFileNameWithoutExtension(f))
+                .Order()]
+            : [];
+
+        _selected = _templates.FirstOrDefault();
+    }
+}
