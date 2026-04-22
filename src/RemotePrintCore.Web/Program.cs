@@ -122,7 +122,7 @@ app.MapPost("/api/banner-upload", async (IFormFile file, IWebHostEnvironment env
 }).DisableAntiforgery();
 
 // Template preview (renders cshtml with dummy data for visual inspection)
-app.MapGet("/preview/{template}", async (string template, IViewRenderService viewRenderer, IWebHostEnvironment env) =>
+app.MapGet("/preview/{template}", async (string template, IViewRenderService viewRenderer, IWebHostEnvironment env, IBannerService bannerService) =>
 {
     var viewsPath = Path.Combine(env.ContentRootPath, "Views", "Export");
     var valid = Directory.GetFiles(viewsPath, "DocumentTemplate*.cshtml")
@@ -135,12 +135,12 @@ app.MapGet("/preview/{template}", async (string template, IViewRenderService vie
     var model = new RemotePrintCore.Web.Models.ViewModels.DocumentInfoViewModel
     {
         IsSofiaTransit = false,
-        FileName = "preview",
+        FileName = await bannerService.GetRandomActiveBannerFileNameAsync() ?? string.Empty,
         DocumentHeader = new RemotePrintCore.Web.Models.ViewModels.DocumentHeaderViewModel
         {
             DocumentNumber = "000123",
             OrderNumber = "ORD-2026-001",
-            DocumentData = new DateTime(2026, 3, 23),
+            DocumentData = DateTime.Now,
             DocumentDueData = "30.03.2026",
             WarehouseName = "Склад София",
             WarehouseAddress = "ул. Примерна 1, София",
