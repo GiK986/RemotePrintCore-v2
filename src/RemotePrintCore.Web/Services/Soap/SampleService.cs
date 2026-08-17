@@ -125,7 +125,7 @@ public class SampleService : ISampleService
             await _printLogService.LogAsync(documentNumber, customerName, printerName,
                 printerOption.TemplateName, copies, PrintStatus.Error, ex.Message);
 
-            throw;
+            return false;
         }
     }
 }
